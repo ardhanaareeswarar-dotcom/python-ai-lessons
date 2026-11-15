@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CBSE Class 12 CS: Python CSV Files & Board Exam Pitfalls Quiz</title>
+<style>
+  :root {
+    --primary: #1e3a8a;
+    --primary-light: #3b82f6;
+    --bg: #f1f5f9;
+    --card: #ffffff;
+    --text: #0f172a;
+    --muted: #475569;
+    --correct-bg: #dcfce7;
+    --correct-border: #16a34a;
+    --correct-text: #14532d;
+    --wrong-bg: #fee2e2;
+    --wrong-border: #dc2626;
+    --wrong-text: #7f1d1d;
+    --code-bg: #1e293b;
+  }
+  * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+  body { background: var(--bg); color: var(--text); margin: 0; padding: 20px; display: flex; justify-content: center; }
+  .container { max-width: 860px; width: 100%; background: var(--card); border-radius: 14px; box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08); overflow: hidden; }
+  .header { background: var(--primary); color: #fff; padding: 20px 28px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+  .header h1 { margin: 0; font-size: 1.35rem; }
+  .header p { margin: 4px 0 0; font-size: 0.9rem; color: #cbd5e1; }
+  .stats-bar { background: #e2e8f0; padding: 12px 28px; display: flex; justify-content: space-between; align-items: center; font-weight: 600; font-size: 0.95rem; }
+  .timer-box { background: #fff; padding: 6px 14px; border-radius: 20px; border: 2px solid var(--primary-light); color: var(--primary); font-variant-numeric: tabular-nums; }
+  .timer-box.warning { border-color: #dc2626; color: #dc2626; animation: pulse 1s infinite; }
+  @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
+  .progress-wrap { height: 6px; background: #cbd5e1; width: 100%; }
+  .progress-bar { height: 100%; background: var(--primary-light); width: 0%; transition: width 0.3s ease; }
+  .quiz-body { padding: 28px; }
+  .topic-tag { display: inline-block; background: #dbeafe; color: #1e40af; font-size: 0.8rem; font-weight: 700; padding: 4px 10px; border-radius: 6px; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .question-text { font-size: 1.15rem; font-weight: 600; line-height: 1.5; margin-bottom: 16px; }
+  pre.code-block { background: var(--code-bg); color: #f8fafc; padding: 14px 18px; border-radius: 8px; font-family: 'Consolas', 'Courier New', monospace; font-size: 0.95rem; overflow-x: auto; line-height: 1.45; margin-bottom: 18px; border-left: 4px solid #38bdf8; }
+  .options-list { display: flex; flex-direction: column; gap: 12px; }
+  .option-btn { text-align: left; background: #f8fafc; border: 2px solid #cbd5e1; border-radius: 10px; padding: 14px 18px; font-size: 1rem; cursor: pointer; transition: all 0.15s ease; display: flex; align-items: center; gap: 12px; }
+  .option-btn:hover:not(:disabled) { border-color: var(--primary-light); background: #eff6ff; }
+  .option-btn:disabled { cursor: default; }
+  .option-badge { background: #e2e8f0; color: #1e293b; font-weight: 700; width: 30px; height: 30px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .option-btn.correct { background: var(--correct-bg); border-color: var(--correct-border); color: var(--correct-text); font-weight: 600; }
+  .option-btn.correct .option-badge { background: var(--correct-border); color: #fff; }
+  .option-btn.wrong { background: var(--wrong-bg); border-color: var(--wrong-border); color: var(--wrong-text); }
+  .option-btn.wrong .option-badge { background: var(--wrong-border); color: #fff; }
+  .feedback-box { margin-top: 22px; padding: 18px 20px; border-radius: 10px; display: none; line-height: 1.55; }
+  .feedback-box.show { display: block; }
+  .feedback-box.correct-fb { background: var(--correct-bg); border-left: 5px solid var(--correct-border); color: var(--correct-text); }
+  .feedback-box.wrong-fb { background: var(--wrong-bg); border-left: 5px solid var(--wrong-border); color: var(--wrong-text); }
+  .feedback-title { font-weight: 700; font-size: 1.05rem; margin-bottom: 6px; }
+  .controls { margin-top: 24px; display: flex; justify-content: flex-end; }
+  .btn-primary { background: var(--primary); color: #fff; border: none; padding: 12px 24px; font-size: 1rem; font-weight: 600; border-radius: 8px; cursor: pointer; display: none; }
+  .btn-primary:hover { background: #1d4ed8; }
+  .result-screen { padding: 36px 28px; text-align: center; display: none; }
+  .score-circle { width: 130px; height: 130px; border-radius: 50%; background: #eff6ff; border: 6px solid var(--primary); display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 0 auto 20px; }
+  .score-circle span { font-size: 2rem; font-weight: 800; color: var(--primary); }
+  .review-table { width: 100%; border-collapse: collapse; margin-top: 24px; text-align: left; font-size: 0.92rem; }
+  .review-table th, .review-table td { border: 1px solid #cbd5e1; padding: 10px 12px; }
+  .review-table th { background: #f1f5f9; }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <div>
+      <h1>CBSE Class 12 CS: Python CSV Files Quiz</h1>
+      <p>Introduction, File Modes, Reader/Writer & Board Exam Pitfalls (20 Questions)</p>
+    </div>
+    <div style="font-size:0.85rem; background:rgba(255,255,255,0.15); padding:6px 12px; border-radius:6px;">
+      30 Seconds / Question • Randomized Options
+    </div>
+  </div>
+
+  <div class="progress-wrap"><div class="progress-bar" id="progressBar"></div></div>
+
+  <div class="stats-bar" id="statsBar">
+    <span id="qCounter">Question 1 of 20</span>
+    <span id="scoreCounter">Score: 0</span>
+    <span class="timer-box" id="timerBox">Time Left: 30s</span>
+  </div>
+
+  <div class="quiz-body" id="quizBody">
+    <div class="topic-tag" id="topicTag">Topic</div>
+    <div class="question-text" id="questionText">Loading question...</div>
+    <pre class="code-block" id="codeBlock" style="display:none;"></pre>
+    <div class="options-list" id="optionsList"></div>
+
+    <div class="feedback-box" id="feedbackBox">
+      <div class="feedback-title" id="feedbackTitle"></div>
+      <div id="feedbackDesc"></div>
+    </div>
+
+    <div class="controls">
+      <button class="btn-primary" id="nextBtn" onclick="nextQuestion()">Next Question →</button>
+    </div>
+  </div>
+
+  <div class="result-screen" id="resultScreen">
+    <h2>Quiz Completed!</h2>
+    <div class="score-circle">
+      <span id="finalScore">0/20</span>
+      <small style="color:#475569; font-weight:600;">Final Score</small>
+    </div>
+    <p id="resultSummary" style="font-size:1.05rem; color:#334155;"></p>
+    <button class="btn-primary" style="display:inline-block; margin-top:10px;" onclick="restartQuiz()">Restart Quiz (Re-shuffle Options)</button>
+    <table class="review-table" id="reviewTable">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Topic</th>
+          <th>Question</th>
+          <th>Your Answer</th>
+          <th>Correct Answer</th>
+        </tr>
+      </thead>
+      <tbody id="reviewBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+const quizData = [
+  {
+    topic: "1. Introduction to CSV",
+    q: "What does CSV stand for, and what type of file format is it in Python file handling?",
+    code: "",
+    options: [
+      { text: "Comma Separated Values — a plain text file storing tabular data", correct: true },
+      { text: "Character Separated Variables — a binary file created via pickle", correct: false },
+      { text: "Common System Values — an encrypted database file", correct: false },
+      { text: "Columnar Structured Values — an executable Python script", correct: false }
+    ],
+    explanation: "CSV stands for Comma Separated Values. It is a human-readable plain text file format where each line represents a record and fields are separated by a delimiter (default comma)."
+  },
+  {
+    topic: "2. Importing Module",
+    q: "Which statement is mandatory at the top of a Python program before calling reader() or writer()?",
+    code: "",
+    options: [
+      { text: "import csv", correct: true },
+      { text: "import pickle", correct: false },
+      { text: "from file import csv", correct: false },
+      { text: "include csv", correct: false }
+    ],
+    explanation: "Python provides built-in CSV support through the 'csv' module, which must be imported using 'import csv'."
+  },
+  {
+    topic: "3. File Opening Modes",
+    q: "Which file mode opens an existing CSV file to add new records at the end without erasing existing records?",
+    code: "",
+    options: [
+      { text: "'a'", correct: true },
+      { text: "'w'", correct: false },
+      { text: "'r'", correct: false },
+      { text: "'wb'", correct: false }
+    ],
+    explanation: "Mode 'a' (append) preserves existing data and places the file pointer at the end. Mode 'w' overwrites/truncates existing data, while 'wb' is for binary files."
+  },
+  {
+    topic: "4. Windows Blank Line Pitfall",
+    q: "Why do CBSE board exam answers include newline='' inside open('data.csv', 'w', newline='')?",
+    code: "with open('student.csv', 'w', newline='') as f:\n    w = csv.writer(f)",
+    options: [
+      { text: "To prevent Python from inserting extra blank lines between records on Windows", correct: true },
+      { text: "To automatically delete the header row before writing", correct: false },
+      { text: "To convert all integer values into strings automatically", correct: false },
+      { text: "To close the file automatically after writing one row", correct: false }
+    ],
+    explanation: "On Windows, csv.writer() writes '\r\n' at the end of each row, and Python's default text mode translates '\n' into '\r\n' again, creating '\r\r\n' (an extra blank line). Setting newline='' prevents this translation."
+  },
+  {
+    topic: "5. Writing Data: writerow()",
+    q: "What type of argument does csv.writer.writerow() expect to write a single record?",
+    code: "",
+    options: [
+      { text: "A 1-dimensional sequence (such as a list or tuple) representing one row", correct: true },
+      { text: "A 2-dimensional nested list containing multiple rows", correct: false },
+      { text: "A dictionary object with keys as column headers", correct: false },
+      { text: "An integer specifying the number of columns", correct: false }
+    ],
+    explanation: "writerow(row) writes a single record and expects a 1D iterable like ['101', 'Anu', '95']. Passing a string directly splits every character into separate comma-separated columns!"
+  },
+  {
+    topic: "6. Writing Data: writerows()",
+    q: "Which method writes multiple records at once from a nested list like [['1', 'A'], ['2', 'B']]?",
+    code: "",
+    options: [
+      { text: "writerows()", correct: true },
+      { text: "writerow()", correct: false },
+      { text: "writelines()", correct: false },
+      { text: "dump()", correct: false }
+    ],
+    explanation: "writerows(rows) takes a 2D iterable (list of lists/tuples) and writes all rows in a single call. writelines() is for plain text files and dump() is for binary pickle files."
+  },
+  {
+    topic: "7. Reading Data: csv.reader()",
+    q: "When iterating over a csv.reader(f) object using 'for row in r:', what data type is 'row' and what are its elements?",
+    code: "r = csv.reader(f)\nfor row in r:\n    print(row)",
+    options: [
+      { text: "'row' is a Python list, and every element inside it is a string (str)", correct: true },
+      { text: "'row' is a tuple, and numeric fields are automatically integers (int)", correct: false },
+      { text: "'row' is a single concatenated string representing the entire line", correct: false },
+      { text: "'row' is a dictionary mapping column headers to values", correct: false }
+    ],
+    explanation: "csv.reader() parses each line into a Python list of strings (e.g., ['101', 'Ravi', '85']), regardless of whether the file contains numbers or text."
+  },
+  {
+    topic: "8. 0-Based Column Indexing",
+    q: "Suppose emp.csv contains the record: E105,Meera,65000. Which expression accesses Meera's salary?",
+    code: "for row in r:\n    # row is ['E105', 'Meera', '65000']",
+    options: [
+      { text: "row[2]", correct: true },
+      { text: "row[3]", correct: false },
+      { text: "row[1]", correct: false },
+      { text: "row[0]", correct: false }
+    ],
+    explanation: "Python uses 0-based indexing: row[0] is 'E105' (1st column), row[1] is 'Meera' (2nd column), and row[2] is '65000' (3rd column)."
+  },
+  {
+    topic: "9. Pitfall: TypeError on Comparison",
+    q: "What happens when the following code runs on marks.csv containing ['Ravi', '85']?",
+    code: "for row in r:\n    if row[1] > 80:\n        print(row[0])",
+    options: [
+      { text: "Raises TypeError: '>' not supported between instances of 'str' and 'int'", correct: true },
+      { text: "Prints 'Ravi' because 85 is greater than 80", correct: false },
+      { text: "Raises ValueError: invalid literal for int()", correct: false },
+      { text: "Raises IndexError: list index out of range", correct: false }
+    ],
+    explanation: "Pitfall 2: Because csv.reader() reads '85' as a string ('str'), comparing row[1] > 80 compares a string with an integer, which raises a TypeError in Python 3."
+  },
+  {
+    topic: "10. Fixing TypeError",
+    q: "How should the condition be fixed to compare decimal prices (e.g., '199.50') in column 2 of items.csv?",
+    code: "for row in r:\n    if ________ > 150.0:\n        print(row[0])",
+    options: [
+      { text: "float(row[1])", correct: true },
+      { text: "int(row[1])", correct: false },
+      { text: "str(row[1])", correct: false },
+      { text: "num(row[1])", correct: false }
+    ],
+    explanation: "Using float(row[1]) safely converts decimal strings like '199.50' into floating-point numbers. Note that int('199.50') would raise a ValueError due to the decimal point!"
+  },
+  {
+    topic: "11. Pitfall: ValueError on Header Row",
+    q: "Suppose student.csv starts with the header row: RollNo,Name,Marks. What error occurs in this code?",
+    code: "r = csv.reader(f)\nfor row in r:\n    if int(row[2]) >= 90:\n        print(row[1])",
+    options: [
+      { text: "Raises ValueError because int('Marks') cannot convert header text to an integer", correct: true },
+      { text: "Raises TypeError because 'Marks' is a string", correct: false },
+      { text: "Skips the header row automatically and prints toppers", correct: false },
+      { text: "Raises KeyError: 'Marks'", correct: false }
+    ],
+    explanation: "Pitfall 3: Without skipping the first row, the loop executes int('Marks') on the header text, crashing with ValueError: invalid literal for int() with base 10: 'Marks'."
+  },
+  {
+    topic: "12. Skipping Header Row",
+    q: "Which statement placed right after 'r = csv.reader(f)' properly skips the header row before the loop?",
+    code: "r = csv.reader(f)\n________\nfor row in r:\n    print(row[0])",
+    options: [
+      { text: "next(r)", correct: true },
+      { text: "r.skip()", correct: false },
+      { text: "skip(r)", correct: false },
+      { text: "r.readline()", correct: false }
+    ],
+    explanation: "next(r) advances the csv.reader iterator by one record, consuming the header row so the for-loop starts directly at the first data record."
+  },
+  {
+    topic: "13. Pitfall: Empty Row IndexError",
+    q: "A CSV file created without newline='' contains blank lines read as empty lists []. What happens when accessing row[1]?",
+    code: "for row in r:\n    print(row[1])",
+    options: [
+      { text: "Raises IndexError: list index out of range when hitting an empty list []", correct: true },
+      { text: "Prints None and continues to the next line", correct: false },
+      { text: "Raises ValueError: empty row encountered", correct: false },
+      { text: "Raises EOFError at the blank line", correct: false }
+    ],
+    explanation: "Pitfall 4: When row is [], it has length 0. Attempting to access row[0] or row[1] causes an IndexError."
+  },
+  {
+    topic: "14. Guarding Against Empty Rows",
+    q: "Which guard condition safely skips blank lines ([]) inside a csv.reader loop?",
+    code: "for row in r:\n    ________\n        print(row[0], row[1])",
+    options: [
+      { text: "if row:", correct: true },
+      { text: "if row != '':", correct: false },
+      { text: "if row is not None:", correct: false },
+      { text: "if row != '\n':", correct: false }
+    ],
+    explanation: "In Python, an empty list [] evaluates to False in a boolean context. Therefore, 'if row:' (or 'if len(row) > 0:') is True only for non-empty rows and safely skips empty lists."
+  },
+  {
+    topic: "15. Pitfall: Custom Delimiters",
+    q: "A file data.csv was written using delimiter='|'. What does csv.reader(f) return if delimiter='|' is omitted while reading?",
+    code: "# File content: P01|Mouse|450\nwith open('data.csv', 'r') as f:\n    r = csv.reader(f)\n    for row in r:\n        print(row)",
+    options: [
+      { text: "['P01|Mouse|450'] (a single-element list containing the whole line)", correct: true },
+      { text: "['P01', 'Mouse', '450']", correct: false },
+      { text: "Raises SyntaxError: invalid delimiter", correct: false },
+      { text: "[] (an empty list)", correct: false }
+    ],
+    explanation: "Pitfall 5: By default, csv.reader() splits only on commas (,). If delimiter='|' is not passed to csv.reader(f, delimiter='|'), it treats the entire line as one single column."
+  },
+  {
+    topic: "16. Writing with Custom Delimiter",
+    q: "Which code correctly writes records separated by a tab character into 'report.csv'?",
+    code: "",
+    options: [
+      { text: "w = csv.writer(f, delimiter='\t')", correct: true },
+      { text: "w = csv.writer(f, separator='\t')", correct: false },
+      { text: "w = csv.writer(f, split='\t')", correct: false },
+      { text: "w = csv.writer('\t', f)", correct: false }
+    ],
+    explanation: "The keyword parameter name in both csv.writer() and csv.reader() is 'delimiter' (e.g., delimiter='\t' or delimiter=';')."
+  },
+  {
+    topic: "17. Output Prediction: Counting Records",
+    q: "Suppose books.csv has 1 header row and 4 book records (no blank lines). What does this code print?",
+    code: "with open('books.csv', 'r') as f:\n    r = csv.reader(f)\n    next(r)\n    count = 0\n    for row in r:\n        count += 1\n    print(count)",
+    options: [
+      { text: "4", correct: true },
+      { text: "5", correct: false },
+      { text: "3", correct: false },
+      { text: "0", correct: false }
+    ],
+    explanation: "next(r) consumes the 1 header row, so the for-loop iterates over the remaining 4 book records, printing 4."
+  },
+  {
+    topic: "18. Output Prediction: String Trap",
+    q: "What will be written to 'test.csv' if a student mistakenly passes a string instead of a list to writerow()?",
+    code: "w = csv.writer(f)\nw.writerow('ABC')",
+    options: [
+      { text: "A,B,C", correct: true },
+      { text: "ABC", correct: false },
+      { text: "Raises TypeError: argument must be a list", correct: false },
+      { text: "['ABC']", correct: false }
+    ],
+    explanation: "A Python string is an iterable of characters! writerow('ABC') iterates over 'A', 'B', and 'C' as separate fields, writing A,B,C."
+  },
+  {
+    topic: "19. File Closing & with Clause",
+    q: "What is the main advantage of opening a CSV file using 'with open(...) as f:' in CBSE board programs?",
+    code: "",
+    options: [
+      { text: "It automatically flushes and closes the file even if an exception occurs", correct: true },
+      { text: "It automatically imports the csv module", correct: false },
+      { text: "It prevents TypeError during string comparisons", correct: false },
+      { text: "It allows reading and writing simultaneously without modes", correct: false }
+    ],
+    explanation: "The 'with' context manager guarantees that f.close() is called automatically when the block ends, ensuring buffered CSV data is properly saved to disk."
+  },
+  {
+    topic: "20. Complete Board Exam Scenario",
+    q: "Identify the missing line to display names of employees earning more than 50000 from 'emp.csv' (Header: ID,Name,Salary):",
+    code: "with open('emp.csv', 'r') as f:\n    r = csv.reader(f)\n    next(r)\n    for row in r:\n        if row:\n            ________\n                print(row[1])",
+    options: [
+      { text: "if int(row[2]) > 50000:", correct: true },
+      { text: "if row[2] > 50000:", correct: false },
+      { text: "if int(row[3]) > 50000:", correct: false },
+      { text: "if int(row[1]) > 50000:", correct: false }
+    ],
+    explanation: "Salary is the 3rd column (index 2: row[2]) and must be typecast using int(row[2]) before comparing with 50000. Name is the 2nd column (row[1])."
+  }
+];
+
+let currentIdx = 0;
+let score = 0;
+let timerInterval = null;
+let timeLeft = 30;
+let answered = false;
+let userHistory = [];
+
+const letters = ['A', 'B', 'C', 'D'];
+
+function shuffleArray(arr) {
+  const copy = arr.map(item => ({ ...item }));
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
+function startTimer() {
+  clearInterval(timerInterval);
+  timeLeft = 30;
+  const timerBox = document.getElementById('timerBox');
+  timerBox.classList.remove('warning');
+  timerBox.textContent = `Time Left: ${timeLeft}s`;
+
+  timerInterval = setInterval(() => {
+    timeLeft--;
+    timerBox.textContent = `Time Left: ${timeLeft}s`;
+    if (timeLeft <= 7) {
+      timerBox.classList.add('warning');
+    }
+    if (timeLeft <= 0) {
+      clearInterval(timerInterval);
+      handleTimeout();
+    }
+  }, 1000);
+}
+
+function loadQuestion() {
+  answered = false;
+  const qObj = quizData[currentIdx];
+  document.getElementById('qCounter').textContent = `Question ${currentIdx + 1} of ${quizData.length}`;
+  document.getElementById('progressBar').style.width = `${((currentIdx) / quizData.length) * 100}%`;
+  document.getElementById('topicTag').textContent = qObj.topic;
+  document.getElementById('questionText').textContent = `${currentIdx + 1}. ${qObj.q}`;
+
+  const codeBlock = document.getElementById('codeBlock');
+  if (qObj.code && qObj.code.trim() !== "") {
+    codeBlock.style.display = 'block';
+    codeBlock.textContent = qObj.code;
+  } else {
+    codeBlock.style.display = 'none';
+  }
+
+  const fbBox = document.getElementById('feedbackBox');
+  fbBox.className = 'feedback-box';
+  document.getElementById('nextBtn').style.display = 'none';
+
+  const optionsList = document.getElementById('optionsList');
+  optionsList.innerHTML = '';
+
+  const shuffledOptions = shuffleArray(qObj.options);
+  qObj._currentShuffled = shuffledOptions;
+
+  shuffledOptions.forEach((opt, idx) => {
+    const btn = document.createElement('button');
+    btn.className = 'option-btn';
+    btn.innerHTML = `<span class="option-badge">${letters[idx]}</span><span>${escapeHtml(opt.text)}</span>`;
+    btn.onclick = () => selectAnswer(idx, btn);
+    optionsList.appendChild(btn);
+  });
+
+  startTimer();
+}
+
+function escapeHtml(str) {
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function selectAnswer(selectedIdx, btnElement) {
+  if (answered) return;
+  answered = true;
+  clearInterval(timerInterval);
+
+  const qObj = quizData[currentIdx];
+  const shuffled = qObj._currentShuffled;
+  const buttons = document.querySelectorAll('.option-btn');
+  let correctLetter = '';
+  let correctText = '';
+
+  buttons.forEach((btn, idx) => {
+    btn.disabled = true;
+    if (shuffled[idx].correct) {
+      btn.classList.add('correct');
+      correctLetter = letters[idx];
+      correctText = shuffled[idx].text;
+    }
+  });
+
+  const isCorrect = shuffled[selectedIdx].correct;
+  const fbBox = document.getElementById('feedbackBox');
+  const fbTitle = document.getElementById('feedbackTitle');
+  const fbDesc = document.getElementById('feedbackDesc');
+
+  if (isCorrect) {
+    score++;
+    document.getElementById('scoreCounter').textContent = `Score: ${score}`;
+    fbBox.className = 'feedback-box show correct-fb';
+    fbTitle.textContent = `✓ Correct! (Option ${correctLetter})`;
+  } else {
+    btnElement.classList.add('wrong');
+    fbBox.className = 'feedback-box show wrong-fb';
+    fbTitle.textContent = `✗ Incorrect! The correct answer is Option ${correctLetter}: ${correctText}`;
+  }
+
+  fbDesc.innerHTML = `<strong>Explanation:</strong> ${escapeHtml(qObj.explanation)}`;
+  userHistory.push({
+    num: currentIdx + 1,
+    topic: qObj.topic,
+    q: qObj.q,
+    selected: `${letters[selectedIdx]}: ${shuffled[selectedIdx].text}`,
+    correct: `${correctLetter}: ${correctText}`,
+    isCorrect
+  });
+
+  const nextBtn = document.getElementById('nextBtn');
+  nextBtn.textContent = currentIdx === quizData.length - 1 ? "View Final Score & Answer Key →" : "Next Question →";
+  nextBtn.style.display = 'inline-block';
+}
+
+function handleTimeout() {
+  if (answered) return;
+  answered = true;
+
+  const qObj = quizData[currentIdx];
+  const shuffled = qObj._currentShuffled;
+  const buttons = document.querySelectorAll('.option-btn');
+  let correctLetter = '';
+  let correctText = '';
+
+  buttons.forEach((btn, idx) => {
+    btn.disabled = true;
+    if (shuffled[idx].correct) {
+      btn.classList.add('correct');
+      correctLetter = letters[idx];
+      correctText = shuffled[idx].text;
+    }
+  });
+
+  const fbBox = document.getElementById('feedbackBox');
+  const fbTitle = document.getElementById('feedbackTitle');
+  const fbDesc = document.getElementById('feedbackDesc');
+
+  fbBox.className = 'feedback-box show wrong-fb';
+  fbTitle.textContent = `⏰ Time's Up! The correct answer is Option ${correctLetter}: ${correctText}`;
+  fbDesc.innerHTML = `<strong>Explanation:</strong> ${escapeHtml(qObj.explanation)}`;
+
+  userHistory.push({
+    num: currentIdx + 1,
+    topic: qObj.topic,
+    q: qObj.q,
+    selected: "Time Expired (No Answer)",
+    correct: `${correctLetter}: ${correctText}`,
+    isCorrect: false
+  });
+
+  const nextBtn = document.getElementById('nextBtn');
+  nextBtn.textContent = currentIdx === quizData.length - 1 ? "View Final Score & Answer Key →" : "Next Question →";
+  nextBtn.style.display = 'inline-block';
+}
+
+function nextQuestion() {
+  currentIdx++;
+  if (currentIdx < quizData.length) {
+    loadQuestion();
+  } else {
+    showResults();
+  }
+}
+
+function showResults() {
+  clearInterval(timerInterval);
+  document.getElementById('progressBar').style.width = '100%';
+  document.getElementById('statsBar').style.display = 'none';
+  document.getElementById('quizBody').style.display = 'none';
+  document.getElementById('resultScreen').style.display = 'block';
+
+  document.getElementById('finalScore').textContent = `${score}/${quizData.length}`;
+  const pct = Math.round((score / quizData.length) * 100);
+  document.getElementById('resultSummary').textContent = `You scored ${score} out of ${quizData.length} (${pct}%). Review the complete answer key below.`;
+
+  const tbody = document.getElementById('reviewBody');
+  tbody.innerHTML = '';
+  userHistory.forEach(item => {
+    const tr = document.createElement('tr');
+    tr.style.background = item.isCorrect ? '#f0fdf4' : '#fef2f2';
+    tr.innerHTML = `
+      <td>${item.num}</td>
+      <td>${escapeHtml(item.topic)}</td>
+      <td>${escapeHtml(item.q)}</td>
+      <td>${escapeHtml(item.selected)}</td>
+      <td><strong>${escapeHtml(item.correct)}</strong></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function restartQuiz() {
+  currentIdx = 0;
+  score = 0;
+  userHistory = [];
+  document.getElementById('scoreCounter').textContent = 'Score: 0';
+  document.getElementById('statsBar').style.display = 'flex';
+  document.getElementById('quizBody').style.display = 'block';
+  document.getElementById('resultScreen').style.display = 'none';
+  loadQuestion();
+}
+
+window.addEventListener('DOMContentLoaded', loadQuestion);
+</script>
+</body>
+</html>
